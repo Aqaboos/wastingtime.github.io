@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Convert Images to PDF</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.3.1/jspdf.umd.min.js"></script>
+    <style>.button {
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #3498db;
+        color: #ffffff;
+        text-align: center;
+        text-decoration: none;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+      }
+      
+      .button:hover {
+        background-color: #2980b9;
+      }
+      </style>
+</head>
+<body>
+    <h1>Upload Images to Convert to PDF</h1>
+    <input type="file" id="image-input" accept="image/*" multiple />
+    <button id="download-pdf">Download PDF</button>
+
+    <script>
+        document.getElementById('download-pdf').addEventListener('click', async function () {
+            const input = document.getElementById('image-input');
+            if (input.files && input.files.length) {
+                for (let i = 0; i < input.files.length; i++) {
+                    const pdf = new jspdf.jsPDF({
+                        orientation: 'p',
+                        unit: 'mm',
+                        format: 'a4'
+                    });
+
+                    const file = input.files[i];
+                    const imgUrl = await readFileAsDataURL(file);
+                    const img = await loadImage(imgUrl);
+                    
+                    const imgProps = pdf.getImageProperties(img);
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    const imgWidth = pdfWidth;
+                    const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+                    pdf.addImage(img, 'JPEG', 0, 0, imgWidth, imgHeight, null, 'NONE');
+
+                    pdf.save(`download${i}.pdf`);
+                }
+            }
+        });
+
+        function readFileAsDataURL(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = e => reject(e);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function loadImage(dataUrl) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = e => reject(e);
+                img.src = dataUrl;
+            });
+        }
+    </script>
+</body>
+</html>
